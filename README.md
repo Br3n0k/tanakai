@@ -9,14 +9,14 @@
 - Login
 - Logout
 - Mercado:
-    -- Valores de itens
-    -- Disponibilidade de itens
-    -- Taxas de mercado
-    -- Compras e vendas de itens
+-- Valores de itens
+-- Disponibilidade de itens
+-- Taxas de mercado
+-- Compras e vendas de itens
 - Combate
-    -- Morte
-    -- Dano
-    -- Estatisticas de Batalha
+-- Morte
+-- Dano
+-- Estatisticas de Batalha
 
 ## Características
 
@@ -50,7 +50,17 @@ O executável estará disponível em `target/release/tanakai`.
 
 #### Windows
 
-Instale o [Npcap](https://npcap.com/#download) em modo WinPcap compatível.
+**IMPORTANTE**: Para compilar o Tanakai, é necessário instalar a versão para desenvolvedor do Npcap que inclui as bibliotecas de desenvolvimento.
+
+> **Nota**: O Tanakai tentará baixar e instalar automaticamente o SDK do Npcap durante a compilação caso ele não seja encontrado em seu sistema. O SDK será baixado para o diretório `vendor/npcap-sdk` dentro do projeto.
+
+1. Baixe e instale o [Npcap](https://npcap.com/#download) em modo WinPcap compatível.
+2. Para desenvolvimento, você precisa do SDK do Npcap, disponível em [Npcap SDK](https://npcap.com/dist/npcap-sdk-1.15.zip)
+3. Caso o download automático falhe, você pode extrair manualmente o conteúdo do SDK para:
+   - `vendor/npcap-sdk` dentro do projeto, ou
+   - `%ProgramFiles%\Npcap\SDK` (geralmente C:\Program Files\Npcap\SDK)
+
+**Alternativa**: Instale o [WinPcap Developer's Pack](https://www.winpcap.org/devel.htm) e certifique-se de que os arquivos estão em `%ProgramFiles%\WinPcap\`
 
 #### Linux
 

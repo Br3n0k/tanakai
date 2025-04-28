@@ -25,7 +25,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            api_url: "http://api.tanakai.io/v1".to_string(),
+            api_url: "http://api.noktech.com.br/tanakai".to_string(),
             photon_port: 5056,
             api_timeout_ms: 5000,
             health_check_interval_ms: 60000,
