@@ -8,7 +8,7 @@ use std::time::Duration;
 use windows_sys::Win32::Foundation::{HWND, WPARAM};
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    FindWindowA, GetWindowLongPtrA, SetWindowLongPtrA, SendMessageA, 
+    GetWindowLongPtrA, SetWindowLongPtrA, SendMessageA, 
     GWL_STYLE, WM_SYSCOMMAND, SC_MINIMIZE, WS_VISIBLE, WS_MINIMIZE,
     GetWindowThreadProcessId, WM_SIZE, EnumWindows,
 };
@@ -16,6 +16,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
 use windows_sys::Win32::System::Threading::GetCurrentProcessId;
 
 /// Mensagens que podem ser enviadas para o gerenciador de janela
+#[allow(dead_code)]
 pub enum WindowMessage {
     /// Minimizar a janela para a bandeja
     MinimizeToTray,
@@ -30,7 +31,6 @@ pub enum WindowMessage {
 /// Retorna um canal para enviar mensagens ao gerenciador
 pub fn init_window_manager() -> Result<Sender<WindowMessage>> {
     let (tx, rx) = mpsc::channel();
-    let tx_clone = tx.clone();
     
     // Inicia a thread do gerenciador de janela
     thread::spawn(move || {
@@ -42,10 +42,8 @@ pub fn init_window_manager() -> Result<Sender<WindowMessage>> {
     // Aguarda um pouco para a thread inicializar
     thread::sleep(Duration::from_millis(500));
     
-    // Minimiza a janela do console para a bandeja após a inicialização
-    if let Err(e) = tx_clone.send(WindowMessage::MinimizeToTray) {
-        error!("Erro ao enviar mensagem para minimizar janela: {}", e);
-    }
+    // Nota: Não tentamos mais minimizar automaticamente a janela na inicialização
+    // para evitar erros quando não conseguimos encontrar a janela do console
     
     Ok(tx)
 }
@@ -91,18 +89,27 @@ fn window_manager_thread(rx: Receiver<WindowMessage>) -> Result<()> {
 fn minimize_to_tray() -> Result<()> {
     unsafe {
         // Encontra a janela do console para o processo atual
-        let hwnd = find_console_window()?;
-        
-        // Altera o estilo da janela para não ser visível quando minimizada
-        let style = GetWindowLongPtrA(hwnd, GWL_STYLE);
-        SetWindowLongPtrA(hwnd, GWL_STYLE, style & (!WS_VISIBLE as isize) | WS_MINIMIZE as isize);
-        
-        // Envia mensagem para minimizar a janela
-        SendMessageA(hwnd, WM_SYSCOMMAND, SC_MINIMIZE as WPARAM, 0);
-        SendMessageA(hwnd, WM_SIZE, 1, 0);
-        
-        info!("Janela minimizada para a bandeja");
-        Ok(())
+        match find_console_window() {
+            Ok(hwnd) => {
+                // Altera o estilo da janela para não ser visível quando minimizada
+                let style = GetWindowLongPtrA(hwnd, GWL_STYLE);
+                SetWindowLongPtrA(hwnd, GWL_STYLE, style & (!WS_VISIBLE as isize) | WS_MINIMIZE as isize);
+                
+                // Envia mensagem para minimizar a janela
+                SendMessageA(hwnd, WM_SYSCOMMAND, SC_MINIMIZE as WPARAM, 0);
+                SendMessageA(hwnd, WM_SIZE, 1, 0);
+                
+                info!("Janela minimizada para a bandeja");
+                Ok(())
+            },
+            Err(e) => {
+                // Se não conseguimos encontrar a janela, apenas logamos o erro
+                // mas não considera isso um erro fatal
+                info!("Não foi possível minimizar para a bandeja: {}", e);
+                // Retornamos Ok para não propagar o erro
+                Ok(())
+            }
+        }
     }
 }
 
@@ -111,21 +118,30 @@ fn minimize_to_tray() -> Result<()> {
 fn restore_from_tray() -> Result<()> {
     unsafe {
         // Encontra a janela do console para o processo atual
-        let hwnd = find_console_window()?;
-        
-        // Altera o estilo da janela para ser visível
-        let style = GetWindowLongPtrA(hwnd, GWL_STYLE);
-        SetWindowLongPtrA(hwnd, GWL_STYLE, style | WS_VISIBLE as isize);
-        
-        // Mostra a janela
-        ShowWindow(hwnd, 9); // SW_RESTORE = 9
-        
-        info!("Janela restaurada da bandeja");
-        Ok(())
+        match find_console_window() {
+            Ok(hwnd) => {
+                // Altera o estilo da janela para ser visível
+                let style = GetWindowLongPtrA(hwnd, GWL_STYLE);
+                SetWindowLongPtrA(hwnd, GWL_STYLE, style | WS_VISIBLE as isize);
+                
+                // Mostra a janela
+                ShowWindow(hwnd, 9); // SW_RESTORE = 9
+                
+                info!("Janela restaurada da bandeja");
+                Ok(())
+            },
+            Err(e) => {
+                // Se não conseguimos encontrar a janela, apenas logamos o erro
+                // mas não considera isso um erro fatal
+                info!("Não foi possível restaurar da bandeja: {}", e);
+                // Retornamos Ok para não propagar o erro
+                Ok(())
+            }
+        }
     }
 }
 
-/// Função auxiliar para obter o nome da classe de uma janela e manipular janelas
+// Função auxiliar para obter o nome da classe de uma janela e manipular janelas
 #[cfg(target_os = "windows")]
 #[link(name = "user32")]
 extern "system" {
@@ -156,8 +172,15 @@ unsafe fn find_console_window() -> Result<HWND> {
             
             if len > 0 {
                 let class_name = String::from_utf8_lossy(&class_name[..len as usize]);
-                // ConsoleWindowClass é o nome da classe para janelas de console
-                if class_name == "ConsoleWindowClass" {
+                // Verifica vários nomes de classe que podem representar uma janela de console
+                // ConsoleWindowClass: Windows cmd tradicional
+                // Mintty: Git Bash e outros terminais baseados no mintty
+                // VirtualConsoleClass: Windows Terminal e outros
+                if class_name == "ConsoleWindowClass" || 
+                   class_name.contains("Mintty") || 
+                   class_name.contains("Console") || 
+                   class_name.contains("Terminal") {
+                    info!("Encontrada janela de console com classe: {}", class_name);
                     enum_data.hwnd = hwnd;
                     return 0; // Interrompe a enumeração
                 }

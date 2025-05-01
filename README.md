@@ -1,126 +1,103 @@
-# Tanakai - Photon Packet Sniffer
+# Tanakai - Analisador de Pacotes para Albion Online
 
-## Descrição
+![Logo Tanakai](https://placeholder.com/logo.png)
 
-- Tanakai é um sniffer de pacotes especializado para o protocolo Photon utilizado pelo jogo Albion Online. Escrito em Rust para alta performance, o Tanakai captura, decodifica e analisa pacotes do jogo, enviando eventos relevantes dentro do jogo sua API REST FULL.
+> Uma solução completa para captura, análise e exibição de dados do jogo Albion Online.
 
-## Eventos capturados
+## Visão Geral
 
-- Login
-- Logout
-- Mercado:
--- Valores de itens
--- Disponibilidade de itens
--- Taxas de mercado
--- Compras e vendas de itens
-- Combate
--- Morte
--- Dano
--- Estatisticas de Batalha
+Tanakai é um sistema completo de captura e análise de pacotes do protocolo Photon utilizado pelo jogo Albion Online. O projeto adota uma arquitetura cliente-servidor:
 
-## Características
+- **Cliente**: Aplicação desktop em Rust com interface gráfica cyberpunk que captura pacotes de rede.
+- **Servidor**: API REST em Python com FastAPI que processa, armazena e disponibiliza dados úteis do jogo.
 
-- **Alto Desempenho**: Desenvolvido em Rust para máxima eficiência e uso mínimo de recursos
-- **Sistema HWID**: Identificação de hardware para controle e segurança
-- **Análise Discreta**: Execução em segundo plano sem impacto na experiência do jogo
-- **API REST**: Integração com backend para processamento e armazenamento de dados
-- **Multiplataforma**: Suporte para Windows, macOS e Linux
+## Principais Funcionalidades
 
-## Instalação
+- 🕵️ **Captura de Pacotes**: Interceptação e decodificação de pacotes do protocolo Photon
+- 📊 **Análise de Dados**: Processamento de eventos e dados do jogo
+- 🔍 **Informações de Mercado**: Valores, disponibilidade e histórico de itens
+- ⚔️ **Estatísticas de Combate**: Análise detalhada de combates e eventos PvP
+- 🗺️ **Dados do Mundo**: Mobs, recursos, conteúdo PvE e mais
+- 🔧 **Configuração Flexível**: Interface gráfica para configuração completa
 
-### Pré-requisitos
+## Estrutura do Projeto
 
-- Rust 1.56.0 ou superior
-- Biblioteca libpcap (Windows: Npcap, Linux: libpcap-dev, macOS: libpcap)
+O Tanakai é dividido em dois componentes principais:
 
-### Compilação
+### [📱 Cliente](/client/)
+
+- Captura pacotes de rede em tempo real com alta performance
+- Interface gráfica moderna com tema cyberpunk
+- Sistema de HWID para gerenciamento de licenças
+- Conexão segura com o servidor
+- [Leia mais sobre o cliente](/client/README.md)
+
+### [🖥️ Servidor](/server/)
+
+- API REST completa para processamento e armazenamento de dados
+- Banco de dados para histórico de preços e eventos
+- Busca avançada de itens, mobs e recursos
+- Autenticação e gerenciamento de clientes
+- [Leia mais sobre o servidor](/server/README.md)
+
+## Informações Capturadas
+
+O sistema Tanakai captura e processa diversos tipos de informações do jogo:
+
+| Categoria | Dados Capturados |
+|-----------|------------------|
+| Mercado | Preços de itens, histórico, volume de transações |
+| Combate | Estatísticas de batalha, mortes, assistências |
+| Jogadores | Atividades, equipamentos, alianças, guildas |
+| Recursos | Localizações, níveis, tempos de respawn |
+| Mobs | Atributos, drops, localizações |
+
+## Instalação Rápida
 
 ```bash
 # Clone o repositório
 git clone https://github.com/tanakai/tanakai.git
 cd tanakai
 
-# Compilação em modo release
+# Configure o servidor (API)
+cd server
+python -m venv venv
+source venv/bin/activate  # ou "venv\Scripts\activate" no Windows
+pip install -r requirements.txt
+uvicorn server.main:app --reload
+
+# Em outro terminal, compile o cliente
+cd client
 cargo build --release
 ```
 
-O executável estará disponível em `target/release/tanakai`.
+Para instruções detalhadas, consulte os READMEs de cada componente.
 
-### Instalação de Dependências
+## Requisitos do Sistema
 
-#### Windows
+### Cliente
 
-**IMPORTANTE**: Para compilar o Tanakai, é necessário instalar a versão para desenvolvedor do Npcap que inclui as bibliotecas de desenvolvimento.
+- Sistema Operacional: Windows 10/11, Ubuntu 20.04+, macOS 12+
+- Memória: 2GB RAM mínimo
+- Drivers: Npcap (Windows) ou libpcap (Linux/macOS)
 
-> **Nota**: O Tanakai tentará baixar e instalar automaticamente o SDK do Npcap durante a compilação caso ele não seja encontrado em seu sistema. O SDK será baixado para o diretório `vendor/npcap-sdk` dentro do projeto.
+### Servidor
 
-1. Baixe e instale o [Npcap](https://npcap.com/#download) em modo WinPcap compatível.
-2. Para desenvolvimento, você precisa do SDK do Npcap, disponível em [Npcap SDK](https://npcap.com/dist/npcap-sdk-1.15.zip)
-3. Caso o download automático falhe, você pode extrair manualmente o conteúdo do SDK para:
-   - `vendor/npcap-sdk` dentro do projeto, ou
-   - `%ProgramFiles%\Npcap\SDK` (geralmente C:\Program Files\Npcap\SDK)
+- Python 3.9+
+- PostgreSQL 12+
+- 4GB RAM recomendado
+- 20GB espaço em disco
 
-**Alternativa**: Instale o [WinPcap Developer's Pack](https://www.winpcap.org/devel.htm) e certifique-se de que os arquivos estão em `%ProgramFiles%\WinPcap\`
+## Contribuindo
 
-#### Linux
-
-```bash
-sudo apt install libpcap-dev
-```
-
-#### macOS
-
-```bash
-brew install libpcap
-```
-
-## Uso
-
-```bash
-# Execução básica (detecta interface automaticamente)
-./tanakai
-
-# Especificar interface de rede
-./tanakai -i eth0
-
-# Especificar URL da API
-./tanakai -a http://api.exemplo.com
-
-# Modo silencioso
-./tanakai -q
-```
-
-### Argumentos
-
-- `-i, --interface`: Interface de rede a ser monitorada
-- `-a, --api_url`: URL da API para envio de dados (padrão: "<http://api.tanakai.io/v1>")
-- `-q, --quiet`: Execução em modo silencioso (sem logs informativos)
-
-## Arquitetura
-
-O Tanakai é organizado nos seguintes módulos:
-
-- **api**: Cliente para comunicação com a API REST
-- **capture**: Captura e processamento de pacotes de rede
-- **config**: Configurações centralizadas
-- **hwid**: Sistema de identificação de hardware
-- **models**: Modelos de dados
-- **photon**: Processamento do protocolo Photon
-- **utils**: Utilitários diversos
-
-## Segurança
-
-O Tanakai inclui um sistema de HWID (Hardware ID) para segurança e prevenção de abusos. O sistema gera um identificador único baseado em:
-
-- Identificador da placa-mãe
-- Identificador da placa de rede
-- Identificador do disco rígido
-- Identificador da placa de vídeo
+Contribuições são bem-vindas! Por favor, leia nossas [diretrizes de contribuição](CONTRIBUTING.md) antes de enviar uma pull request.
 
 ## Licença
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para detalhes.
+Este projeto está licenciado sob a [Licença MIT](LICENSE) - veja o arquivo LICENSE para detalhes.
 
-## Contribuição
+## Contato e Suporte
 
-Contribuições são bem-vindas! Por favor, sinta-se à vontade para enviar pull requests, relatar problemas ou sugerir melhorias.
+- Discord: n0k0606
+- GitHub: [Reportar Problemas](https://github.com/tanakai/tanakai/issues)
+- Email: <br3n0k@gmail.com>

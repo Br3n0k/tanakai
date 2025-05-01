@@ -1,1 +1,21 @@
-/target
+# Ignora o VSCode
+/.vscode/
+
+# Ignora o ambiente virtual
+venv/
+
+# Ignora todos os arquivos de cache
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+
+# Ignora todos os diretorios de cache
+__pycache__/
+
+# Ignora o diretorio de target
+target/
+
+# Ignora os arquivos de Dumps do Albion Online
+dumps/

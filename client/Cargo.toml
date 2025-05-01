@@ -35,6 +35,12 @@ aes-gcm = "0.10.1"
 rand = "0.8.5"
 tray-icon = "0.5.1"
 open = "5.0.0"
+semver = "1.0.17"
+egui = "0.22.0"
+eframe = "0.22.0"
+egui_extras = "0.22.0"
+image = "0.24.7"
+notify = "6.0.1"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.48.0", features = [
