@@ -3,8 +3,7 @@ import xml.etree.ElementTree as ET
 import json
 
 def analyze_xml_structure():
-    server_dir = os.environ.get("TANAKAI_SERVER", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    file_path = os.path.join(server_dir, "dumps", "items.xml")
+    file_path = os.path.join(os.environ["TANAKAI_DUMPS"], "items.xml")
     
     if not os.path.exists(file_path):
         return "Arquivo não encontrado: " + file_path

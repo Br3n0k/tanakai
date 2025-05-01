@@ -15,9 +15,13 @@ sys.path.append(os.environ["TANAKAI"])
 # Define algumas variaveis de ambiente para o projeto
 os.environ["TANAKAI_SERVER"] = os.path.join(os.environ["TANAKAI"], "server")
 os.environ["TANAKAI_DUMPS"] = os.path.join(os.environ["TANAKAI"], "dumps")
+os.environ["TANAKAI_ASSETS"] = os.path.join(os.environ["TANAKAI"], "assets")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import shutil
 
 from server.core.config import settings
 from server.api.v1.api import api_router
@@ -33,6 +37,9 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
+# Monta os arquivos estáticos
+app.mount("/static", StaticFiles(directory=os.environ["TANAKAI_ASSETS"]), name="static")
+
 # Configuração CORS
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
@@ -44,6 +51,10 @@ if settings.BACKEND_CORS_ORIGINS:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse(os.path.join(os.environ["TANAKAI_ASSETS"], "icon.ico"))
 
 @app.get("/")
 def root():
