@@ -1,23 +1,18 @@
 import json
 import struct
-import logging
+from typing import Dict, Any, Tuple, Optional, Callable
 
-# Configuração de logging
-logger = logging.getLogger("TanakaiProcessors")
-logger.setLevel(logging.INFO)
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s', 
-                                datefmt='%Y-%m-%d %H:%M:%S')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+from core.logger import Logger
 
-def get_default_processors():
+# Logger para o módulo
+logger = Logger("PhotonProcessors")
+
+def get_default_processors() -> Dict[str, Callable]:
     """
-    Retorna um dicionário com os processadores padrão
+    Retorna um dicionário com os processadores padrão para o Albion Online.
     
     Returns:
-        dict: Dicionário com nome e função do processador
+        Dict[str, Callable]: Dicionário com nome e função do processador
     """
     return {
         "player_detection": process_player_detection,
@@ -25,23 +20,20 @@ def get_default_processors():
         "combat_detection": process_combat_detection
     }
 
-def process_player_detection(data, addr):
+def process_player_detection(data: bytes, addr: Tuple) -> Optional[Dict[str, Any]]:
     """
-    Processa pacotes para detectar informações de jogadores
+    Processa pacotes para detectar informações de jogadores.
     
     Args:
         data (bytes): Dados do pacote
-        addr (tuple): Endereço de origem
+        addr (tuple): Endereço de origem (IP, porta)
         
     Returns:
-        dict or None: Informações do jogador detectado ou None
+        Optional[Dict[str, Any]]: Informações do jogador detectado ou None
     """
     try:
         # Aqui você implementaria a lógica real de análise de pacotes
         # Isso é apenas um exemplo simplificado
-        
-        # Verifique assinaturas de bytes que podem indicar pacotes de jogador
-        # Por exemplo, procurando por padrões específicos nos primeiros bytes
         
         # Exemplo (fictício): Se o pacote começar com bytes específicos que indicam dados de jogador
         if len(data) > 8 and data[0:2] == b'\x12\x34':
@@ -64,16 +56,16 @@ def process_player_detection(data, addr):
     
     return None
 
-def process_item_detection(data, addr):
+def process_item_detection(data: bytes, addr: Tuple) -> Optional[Dict[str, Any]]:
     """
-    Processa pacotes para detectar itens no mundo
+    Processa pacotes para detectar itens no mundo.
     
     Args:
         data (bytes): Dados do pacote
-        addr (tuple): Endereço de origem
+        addr (tuple): Endereço de origem (IP, porta)
         
     Returns:
-        dict or None: Informações do item detectado ou None
+        Optional[Dict[str, Any]]: Informações do item detectado ou None
     """
     try:
         # Exemplo (fictício): Se o pacote começar com bytes específicos que indicam item
@@ -95,16 +87,16 @@ def process_item_detection(data, addr):
     
     return None
 
-def process_combat_detection(data, addr):
+def process_combat_detection(data: bytes, addr: Tuple) -> Optional[Dict[str, Any]]:
     """
-    Processa pacotes para detectar eventos de combate
+    Processa pacotes para detectar eventos de combate.
     
     Args:
         data (bytes): Dados do pacote
-        addr (tuple): Endereço de origem
+        addr (tuple): Endereço de origem (IP, porta)
         
     Returns:
-        dict or None: Informações do evento de combate detectado ou None
+        Optional[Dict[str, Any]]: Informações do evento de combate detectado ou None
     """
     try:
         # Exemplo (fictício): Se o pacote começar com bytes específicos que indicam evento de combate

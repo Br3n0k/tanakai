@@ -1,3 +1,8 @@
 {
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "npcap": {
+        "version": "1.82",
+        "executable": "npcap-1.82.exe",
+        "sdk": "https://npcap.com/dist/npcap-sdk-1.15.zip"
+    }
 }
