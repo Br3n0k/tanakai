@@ -1,0 +1,20 @@
+# Dependências principais
+psutil>=7.0.0  # Para detecção de processos
+requests>=2.32.3  # Para comunicação com o servidor
+python-pcapng>=2.1.1  # Para processamento de pacotes de rede
+
+# Bibliotecas alternativas para captura de pacotes
+# Instale uma das seguintes opções:
+# Opção 1: scapy (não requer compilação, mais fácil de instalar)
+scapy>=2.5.0  # Alternativa para captura de pacotes, não requer compilação
+
+# Opção 2: pypcap (requer instalação do SDK do Npcap para compilar)
+# IMPORTANTE: Para instalar o pypcap, é necessário:
+# 1. Baixar e instalar o Npcap: https://npcap.com/
+# 2. Baixar o Npcap SDK: https://npcap.com/dist/npcap-sdk-1.13.zip 
+# 3. Extrair o SDK para uma pasta conhecida
+# 4. Instalar com: pip install pypcap --global-option=build_ext --global-option="-IC:\caminho\para\npcap-sdk-1.13\Include"
+# pypcap>=1.3.0  # Para captura de pacotes (necessita compilação)
+
+# Instalação básica: pip install -r requirements.txt
+# Para captura de pacotes com pypcap, siga as instruções acima 

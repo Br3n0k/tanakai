@@ -1,12 +1,15 @@
 import os
 import xml.etree.ElementTree as ET
 import json
+import re
+import sys
+from collections import Counter
 
 def analyze_xml_structure():
-    file_path = os.path.join(os.environ["TANAKAI_DUMPS"], "items.xml")
+    file_path = os.path.join(os.environ.get("TANAKAI_DUMPS", "dumps"), "items.xml")
     
     if not os.path.exists(file_path):
-        return "Arquivo não encontrado: " + file_path
+        return f"Arquivo não encontrado: {file_path}"
     
     try:
         # Informações sobre o arquivo
@@ -14,110 +17,109 @@ def analyze_xml_structure():
         print(f"Arquivo: {file_path}")
         print(f"Tamanho: {file_size_mb:.2f} MB")
         
-        # Abre e lê apenas o início do arquivo para detectar a estrutura
-        with open(file_path, 'r', encoding='utf-8') as file:
-            head = file.read(20000)  # Lê os primeiros 20KB
+        print("\n=== ANÁLISE DE LINHA POR LINHA ===")
+        # Contadores para tags e atributos
+        item_types = Counter()
+        all_attributes = set()
+        common_attributes = Counter()
+        weapon_attributes = Counter()
+        armor_attributes = Counter()
+        resource_attributes = Counter()
+        consumable_attributes = Counter()
         
-        print("\n--- Primeiros 300 caracteres ---")
-        print(head[:300])
-        print("..." if len(head) > 300 else "")
+        # Exemplos de cada tipo de item
+        item_examples = {}
         
-        # Tenta obter a raiz e analisar a estrutura
-        try:
-            # Adiciona um fechamento para o XML truncado, se necessário
-            if "<items>" in head.lower() and "</items>" not in head.lower():
-                parse_text = head + "</items>"
-            else:
-                parse_text = head
+        # Padrão para encontrar tags de itens
+        item_pattern = re.compile(r'<(\w+item|weapon|armor|tool|equipment|consumable|accessory|resource|mount|furniture|chest)\s')
+        # Padrão para extrair atributos
+        attr_pattern = re.compile(r'(\w+)="([^"]*)"')
+        
+        # Processamento linha por linha
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
+            for line_number, line in enumerate(file, 1):
+                if line_number % 10000 == 0:
+                    print(f"Processando linha {line_number}...")
                 
-            root = ET.fromstring(parse_text)
-            
-            print("\n--- Estrutura do XML ---")
-            print(f"Tag raiz: {root.tag}")
-            print(f"Atributos da raiz: {root.attrib}")
-            
-            # Encontra todos os tipos de tags únicas no primeiro nível
-            item_tags = set()
-            for child in root:
-                item_tags.add(child.tag)
-            
-            print(f"\nTags de itens encontradas: {', '.join(item_tags)}")
-            
-            # Analisa um exemplo de cada tipo de tag
-            for tag in item_tags:
-                items = root.findall(f".//{tag}")
-                if items:
-                    print(f"\n--- Exemplo de {tag} ---")
-                    item = items[0]
-                    print(f"Atributos: {json.dumps(item.attrib, indent=2)}")
+                # Encontra tipos de itens
+                match = item_pattern.search(line)
+                if match:
+                    item_type = match.group(1)
+                    item_types[item_type] += 1
                     
-                    # Amostra de alguns atributos importantes
-                    important_attrs = ['uniquename', 'tier', 'itemvalue', 'maxstacksize', 
-                                     'weight', 'shopcategory', 'craftingcategory', 
-                                     'localizationnamelocation']
+                    # Armazena exemplo deste tipo se ainda não tivermos
+                    if item_type not in item_examples and len(item_examples) < 10:
+                        item_examples[item_type] = line.strip()
                     
-                    print("\nAtributos importantes:")
-                    for attr in important_attrs:
-                        if attr in item.attrib:
-                            print(f"- {attr}: {item.attrib[attr]}")
-                    
-                    # Verifica filhos
-                    children = list(item)
-                    if children:
-                        print("\nFilhos do elemento:")
-                        for child in children[:5]:  # Limita a 5 filhos
-                            print(f"- {child.tag}: {json.dumps(child.attrib, indent=2)}")
-                            if list(child):
-                                print(f"  (Tem {len(list(child))} sub-elementos)")
-            
-            # Conta quantos de cada tipo existem
-            print("\n--- Contagem de tipos de itens ---")
-            for tag in item_tags:
-                count = len(root.findall(f".//{tag}"))
-                print(f"{tag}: {count} items")
-            
-            # Analisa os tipos de categorias existentes
-            categories = {}
-            for tag in item_tags:
-                for item in root.findall(f".//{tag}"):
-                    cat = item.get("shopcategory", "")
-                    if cat:
-                        categories[cat] = categories.get(cat, 0) + 1
-            
-            print("\n--- Categorias de itens ---")
-            for cat, count in categories.items():
-                print(f"{cat}: {count} items")
-        
-        except Exception as parse_error:
-            print(f"\nErro ao analisar o XML: {parse_error}")
-            print("Tentando analisar linha por linha...\n")
-            
-            # Análise de fallback - procura padrões em linhas
-            lines = head.split('\n')
-            
-            patterns = {
-                "<item": 0,
-                "<weapon": 0,
-                "<armor": 0,
-                "<consumable": 0,
-                "uniquename=": 0,
-                "tier=": 0,
-                "itemvalue=": 0,
-                "maxstacksize=": 0
-            }
-            
-            for line in lines:
-                for pattern in patterns:
-                    if pattern in line.lower():
-                        patterns[pattern] += 1
+                    # Extrai atributos
+                    attributes = attr_pattern.findall(line)
+                    for attr_name, attr_value in attributes:
+                        all_attributes.add(attr_name)
+                        common_attributes[attr_name] += 1
                         
-                        # Mostra alguns exemplos
-                        if patterns[pattern] <= 2:
-                            print(f"Exemplo ({pattern}): {line.strip()}")
-            
-            print("\nContagem de padrões encontrados:")
-            for pattern, count in patterns.items():
-                print(f"- {pattern}: {count}")
+                        # Conta atributos específicos por tipo
+                        if 'weapon' in item_type:
+                            weapon_attributes[attr_name] += 1
+                        elif 'armor' in item_type:
+                            armor_attributes[attr_name] += 1
+                        elif 'resource' in item_type or 'material' in item_type:
+                            resource_attributes[attr_name] += 1
+                        elif 'consumable' in item_type or 'potion' in item_type:
+                            consumable_attributes[attr_name] += 1
+        
+        # Exibe resultados
+        print("\n=== TIPOS DE ITENS ENCONTRADOS ===")
+        for item_type, count in item_types.most_common():
+            print(f"{item_type}: {count} itens")
+        
+        print("\n=== ATRIBUTOS MAIS COMUNS ===")
+        for attr, count in common_attributes.most_common(20):
+            print(f"{attr}: {count} ocorrências")
+        
+        print("\n=== ATRIBUTOS ESPECÍFICOS DE ARMAS ===")
+        for attr, count in weapon_attributes.most_common(15):
+            print(f"{attr}: {count} ocorrências")
+        
+        print("\n=== ATRIBUTOS ESPECÍFICOS DE ARMADURAS ===")
+        for attr, count in armor_attributes.most_common(15):
+            print(f"{attr}: {count} ocorrências")
+        
+        print("\n=== ATRIBUTOS ESPECÍFICOS DE RECURSOS ===")
+        for attr, count in resource_attributes.most_common(15):
+            print(f"{attr}: {count} ocorrências")
+        
+        print("\n=== ATRIBUTOS ESPECÍFICOS DE CONSUMÍVEIS ===")
+        for attr, count in consumable_attributes.most_common(15):
+            print(f"{attr}: {count} ocorrências")
+        
+        print("\n=== EXEMPLOS DE TIPOS DE ITENS ===")
+        for item_type, example in item_examples.items():
+            print(f"\n--- {item_type} ---")
+            print(example)
+        
+        print("\n=== SUGESTÃO DE ESQUEMA DE ITEM ===")
+        # Lista com atributos mais importantes, ordenados por frequência
+        important_attrs = [attr for attr, _ in common_attributes.most_common(20)]
+        weapon_attrs = [attr for attr, _ in weapon_attributes.most_common(10) if attr not in important_attrs]
+        armor_attrs = [attr for attr, _ in armor_attributes.most_common(10) if attr not in important_attrs]
+        consumable_attrs = [attr for attr, _ in consumable_attributes.most_common(10) if attr not in important_attrs]
+        
+        print("class Item(BaseModel):")
+        print("    # Atributos principais")
+        for attr in important_attrs[:10]:
+            print(f"    {attr}: Optional[str] = None")
+        
+        print("\n    # Atributos de armas")
+        for attr in weapon_attrs[:5]:
+            print(f"    {attr}: Optional[str] = None")
+        
+        print("\n    # Atributos de armaduras")
+        for attr in armor_attrs[:5]:
+            print(f"    {attr}: Optional[str] = None")
+        
+        print("\n    # Atributos de consumíveis")
+        for attr in consumable_attrs[:5]:
+            print(f"    {attr}: Optional[str] = None")
         
         return "Análise concluída"
     except Exception as e:

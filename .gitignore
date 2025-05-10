@@ -13,9 +13,13 @@ venv/
 
 # Ignora todos os diretorios de cache
 __pycache__/
+.mypy_cache/
 
 # Ignora o diretorio de target
 target/
 
 # Ignora os arquivos de Dumps do Albion Online
 dumps/
+
+# Ignora o arquivo de configuração
+*.tanakai

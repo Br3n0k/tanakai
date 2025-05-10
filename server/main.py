@@ -21,7 +21,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-import shutil
 
 from server.core.config import settings
 from server.api.v1.api import api_router
@@ -30,6 +29,24 @@ from server.utils import get_dumps
 
 # Faz o download dos dumps do albion online
 get_dumps()
+
+# Procedimentos do banco de dados
+# Importa e usa a função de inicialização do banco de dados
+import logging
+from server.db.initialize import check_and_initialize_database
+
+# Configura o logging básico se ainda não estiver configurado
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("server")
+
+# Verifica e inicializa o banco de dados
+logger.info(f"Diretório base do projeto: {os.environ['TANAKAI']}")
+logger.info(f"URI do banco de dados: {settings.SQLALCHEMY_DATABASE_URI}")
+if not check_and_initialize_database():
+    logger.error("Erro ao inicializar o banco de dados. Aplicação não pode continuar.")
+    sys.exit(1)
+else:
+    logger.info("Banco de dados inicializado com sucesso!")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -58,4 +75,15 @@ async def favicon():
 
 @app.get("/")
 def root():
-    return {"message": "Bem-vindo à API do Tanakai"} 
+    return {"message": "Bem-vindo à API do Tanakai"}
+
+@app.get("/health")
+def health():
+    return {
+        # Status - live | down | maintenance
+        "status": "live",
+        # Versão do projeto
+        "version": settings.VERSION,
+        # Nome do projeto
+        "project": settings.PROJECT_NAME
+    }
